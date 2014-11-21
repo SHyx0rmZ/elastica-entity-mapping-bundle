@@ -14,4 +14,6 @@ use Doctrine\Common\Annotations\Annotation;
 class ElasticsearchMapping
 {
     public $file;
+
+    public $indices;
 }

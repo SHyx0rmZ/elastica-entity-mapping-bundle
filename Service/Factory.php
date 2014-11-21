@@ -30,12 +30,14 @@ class Factory
         $this->logger = $logger;
     }
 
-    public function addWatchdog($type, $file)
+    public function addWatchdog($type, $file, $indices)
     {
         $mapping = json_decode(file_get_contents($file), true);
         $mapping = $mapping[$type]['properties'];
-
-        $this->watches[$type] = $mapping;
+        $this->watches[$type] = (object)array(
+            'mapping' => $mapping,
+            'indices' => $indices
+        );
     }
 
     public function createInstance()
@@ -44,19 +46,24 @@ class Factory
         $class = new \ReflectionClass(Client::class);
         $client = $class->newInstanceArgs(func_get_args());
 
-        foreach ($this->indices as $indexName) {
-            foreach ($this->watches as $typeName => $mapping) {
-                $type = new Type(new Index($client, $indexName), $typeName);
+        foreach ($this->indices as $indexConfig) {
+            $indexName = $indexConfig['name'];
+            $indexAlias = isset($indexConfig['alias']) ? $indexConfig['alias'] : null;
 
-                $currentMapping = $type->getMapping();
-                $currentMapping = @$currentMapping[$indexName]['mappings'][$typeName]['properties'];
+            foreach ($this->watches as $typeName => $typeInfo) {
+                if (empty($typeInfo->indices) || ($indexAlias !== null && in_array($indexAlias, $typeInfo->indices))) {
+                    $type = new Type(new Index($client, $indexName), $typeName);
 
-                if ($currentMapping != $mapping) {
-                    if ($this->shouldUpdate) {
-                        $this->logger->info('Updating elasticsearch mapping: ' . $this->getTypeAddress($type));
-                        $type->setMapping($mapping);
-                    } else {
-                        throw new \RuntimeException('Elasticsearch mapping changed: ' . $this->getTypeAddress($type));
+                    $currentMapping = $type->getMapping();
+                    $currentMapping = @$currentMapping[$indexName]['mappings'][$typeName]['properties'];
+
+                    if ($currentMapping != $typeInfo->mapping) {
+                        if ($this->shouldUpdate) {
+                            $this->logger->info('Updating elasticsearch mapping: ' . $this->getTypeAddress($type));
+                            $type->setMapping($typeInfo->mapping);
+                        } else {
+                            throw new \RuntimeException('Elasticsearch mapping changed: ' . $this->getTypeAddress($type));
+                        }
                     }
                 }
             }

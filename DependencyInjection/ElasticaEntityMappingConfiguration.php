@@ -26,7 +26,14 @@ class ElasticaEntityMappingConfiguration implements ConfigurationInterface
                 ->arrayNode('indices')
                     ->isRequired()
                     ->requiresAtLeastOneElement()
-                    ->prototype('scalar')->end()
+                    ->prototype('array')
+                        ->children()
+                            ->scalarNode('name')
+                                ->isRequired()
+                            ->end()
+                            ->scalarNode('alias')->end()
+                        ->end()
+                    ->end()
                 ->end()
             ->end();
 

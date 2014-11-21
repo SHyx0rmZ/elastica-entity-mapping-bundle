@@ -25,6 +25,7 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
             $class = new \ReflectionClass($entity);
             $annotation = $reader->getClassAnnotation($class, ElasticsearchMapping::class);
 
+            /** @var ElasticsearchMapping $annotation */
             if ($annotation) {
                 if (!isset($annotation->file)) {
                     throw new \RuntimeException('ElasticsearchMapping needs property "file" in ' . $class->getName());
@@ -38,12 +39,13 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
 
                 $mapping = json_decode(file_get_contents($file), true);
                 $type = array_keys($mapping)[0];
+                $indices = empty($annotation->indices) ? array() : explode(',', $annotation->indices);
 
                 if (!is_string($type)) {
                     throw new \RuntimeException('ElasticsearchMapping not valid: ' . $file);
                 }
 
-                $factory->addMethodCall('addWatchdog', array($type, $file));
+                $factory->addMethodCall('addWatchdog', array($type, $file, $indices));
             }
         }
 
