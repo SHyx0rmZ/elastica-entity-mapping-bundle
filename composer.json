@@ -1,0 +1,28 @@
+{
+    "name": "ppokatilo/elastica-entity-mapping-bundle",
+    "type": "symfony-bundle",
+    "description": "Automatically updates elasticsearch mappings",
+    "keywords": [ "elasticsearch", "mapping" ],
+    "homepage": "http://github/SHyx0rmZ/elastica-entity-mapping-bundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Patrick Pokatilo",
+            "email": "mail@shyxormz.net"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2",
+        "doctrine/annotations": "1.*",
+        "psr/log": "~1.0",
+        "ruflin/elastica": "*",
+        "symfony/config": "~2.0",
+        "symfony/dependency-injection": "~2.0",
+        "symfony/finder": "~2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SHy\\ElasticaEntityMapping\\": ""
+        }
+    }
+}
