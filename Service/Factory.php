@@ -3,6 +3,7 @@
 namespace SHyx0rmZ\ElasticaEntityMapping\Service;
 
 use Elastica\Client;
+use Elastica\Exception\ResponseException;
 use Elastica\Index;
 use Elastica\Type;
 use Psr\Log\LoggerInterface;
@@ -45,22 +46,50 @@ class Factory
         /** @var Client $client */
         $class = new \ReflectionClass(Client::class);
         $client = $class->newInstanceArgs(func_get_args());
+        $baseDir = __DIR__ . '/../../../../';
 
         foreach ($this->indices as $indexConfig) {
             $indexName = $indexConfig['name'];
             $indexAlias = isset($indexConfig['alias']) ? $indexConfig['alias'] : null;
+            $indexSettings = isset($indexConfig['settings']) ? $indexConfig['settings'] : null;
+
+            if ($indexSettings !== null) {
+                $file = $baseDir . $indexSettings;
+
+                if (!is_file($file)) {
+                    throw new \RuntimeException('ElasticsearchMapping file "' . $file . '" not found');
+                }
+
+                $indexSettings = json_decode(file_get_contents($file), true);
+            }
+
+            $index = new Index($client, $indexName);
 
             foreach ($this->watches as $typeName => $typeInfo) {
                 if (empty($typeInfo->indices) || ($indexAlias !== null && in_array($indexAlias, $typeInfo->indices))) {
-                    $type = new Type(new Index($client, $indexName), $typeName);
+                    $type = new Type($index, $typeName);
 
                     $currentMapping = $type->getMapping();
                     $currentMapping = @$currentMapping[$indexName]['mappings'][$typeName]['properties'];
 
                     if ($currentMapping != $typeInfo->mapping) {
                         if ($this->shouldUpdate) {
-                            $this->logger->info('Updating elasticsearch mapping: ' . $this->getTypeAddress($type));
-                            $type->setMapping($typeInfo->mapping);
+                            try {
+                                $this->logger->info('Updating elasticsearch mapping: ' . $this->getTypeAddress($type));
+                                $type->setMapping($typeInfo->mapping);
+                            } catch (ResponseException $e) {
+                                $this->logger->error('Error while updating elasticsearch mapping, trying to update settings');
+
+                                if ($indexSettings !== null) {
+                                    $this->logger->info('Updating elasticsearch settings: ' . $this->getIndexAddress($index));
+                                    $index->close();
+                                    $index->setSettings($indexSettings);
+                                    $index->open();
+                                }
+
+                                $this->logger->info('Updating elasticsearch mapping: ' . $this->getTypeAddress($type));
+                                $type->setMapping($typeInfo->mapping);
+                            }
                         } else {
                             throw new \RuntimeException('Elasticsearch mapping changed: ' . $this->getTypeAddress($type));
                         }
@@ -72,14 +101,20 @@ class Factory
         return $client;
     }
 
-    private function getTypeAddress(Type $type)
+    private function getIndexAddress(Index $index)
     {
-        $typeName = $type->getName();
-        $index = $type->getIndex();
         $indexName = $index->getName();
         $client = $index->getClient();
         $connection = $client->getConnection();
 
-        return strtolower($connection->getTransport()) . '://' . $connection->getHost() . ':' . $connection->getPort() . '/' . $indexName . '/' . $typeName;
+        return strtolower($connection->getTransport()) . '://' . $connection->getHost() . ':' . $connection->getPort() . '/' . $indexName;
+    }
+
+    private function getTypeAddress(Type $type)
+    {
+        $typeName = $type->getName();
+        $index = $type->getIndex();
+
+        return $this->getIndexAddress($index) . '/' . $typeName;
     }
 }

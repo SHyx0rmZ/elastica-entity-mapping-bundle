@@ -32,6 +32,7 @@ class ElasticaEntityMappingConfiguration implements ConfigurationInterface
                                 ->isRequired()
                             ->end()
                             ->scalarNode('alias')->end()
+                            ->scalarNode('settings')->end()
                         ->end()
                     ->end()
                 ->end()
