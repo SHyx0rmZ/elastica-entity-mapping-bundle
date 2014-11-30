@@ -23,5 +23,9 @@ class ElasticaEntityMappingExtension extends Extension
         $factory->setPublic(false);
         $factory->addArgument($config);
         $factory->addArgument(new Reference('logger'));
+
+        $container->setAlias('shyxormz.elastica.mapping.factory.client', $config['client']);
+        $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client');
+        $alias->setPublic(false);
     }
 }

@@ -20,6 +20,9 @@ class ElasticaEntityMappingConfiguration implements ConfigurationInterface
         $root
             ->isRequired()
             ->children()
+                ->scalarNode('client')
+                    ->isRequired()
+                ->end()
                 ->booleanNode('update')
                     ->isRequired()
                 ->end()

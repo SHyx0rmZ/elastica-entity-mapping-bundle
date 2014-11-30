@@ -47,7 +47,8 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
             }
         }
 
-        $client = $container->getDefinition('elastic.client');
+        $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client');
+        $client = $container->getDefinition($alias);
         $client->setFactoryService('shyxormz.elastica.mapping.factory');
         $client->setFactoryMethod('createInstance');
     }
