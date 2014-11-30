@@ -4,6 +4,7 @@ namespace SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\Compiler;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use SHyx0rmZ\ElasticaEntityMapping\Annotation\ElasticsearchMapping;
+use SHyx0rmZ\ElasticaEntityMapping\Component\VendorScanner;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Finder\Finder;
@@ -16,6 +17,9 @@ use Symfony\Component\Finder\SplFileInfo;
  */
 class ElasticaEntityMappingPass implements CompilerPassInterface
 {
+    /**
+     * @param ContainerBuilder $container
+     */
     public function process(ContainerBuilder $container)
     {
         $reader = new AnnotationReader();
@@ -27,23 +31,17 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
 
             /** @var ElasticsearchMapping $annotation */
             if ($annotation) {
-                if (!isset($annotation->file)) {
-                    throw new \RuntimeException('ElasticsearchMapping needs property "file" in ' . $class->getName());
-                }
+                $this->ensurePropertiesExists($annotation, $class);
 
                 $file = dirname($path) . DIRECTORY_SEPARATOR . $annotation->file;
 
-                if (!is_file($file)) {
-                    throw new \RuntimeException('ElasticsearchMapping file "' . $file . '" not found in ' . $class->getName());
-                }
+                $this->ensureFileExists($file, $class);
 
                 $mapping = json_decode(file_get_contents($file), true);
                 $type = array_keys($mapping)[0];
                 $indices = empty($annotation->indices) ? array() : explode(',', $annotation->indices);
 
-                if (!is_string($type)) {
-                    throw new \RuntimeException('ElasticsearchMapping not valid: ' . $file);
-                }
+                $this->ensureTypeValid($type, $file);
 
                 $factory->addMethodCall('addWatchdog', array($type, $file, $indices));
             }
@@ -59,36 +57,64 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
      */
     private function yieldEntities()
     {
-        $vendorDir = __DIR__ . '/../../../..';
-        $autoloadDirs = array('/include_paths.php', '/autoload_namespaces.php', '/autoload_psr4.php', '/autoload_classmap.php', '/autoload_files.php');
+        $scanner = new VendorScanner();
 
-        foreach ($autoloadDirs as $autoloadDir) {
-            $autoloadMaps = require($vendorDir . '/composer' . $autoloadDir);
+        foreach ($scanner->yieldIncludeDirectories() as $namespace => $includeDir) {
+            $finder = new Finder();
 
-            foreach ($autoloadMaps as $namespace => $autoloadMap) {
-                if (!is_string($namespace)) {
-                    $namespace = '';
-                }
-
-                if (!is_array($autoloadMap)) {
-                    $autoloadMap = array($autoloadMap);
-                }
-
-                foreach ($autoloadMap as $includeDir) {
-                    $finder = new Finder();
-
-                    try {
-                        $finder->files()->name('*.php')->in($includeDir . '/Entity');
-                    } catch (\InvalidArgumentException $e) {
-                        continue;
-                    }
-
-                    /** @var SplFileInfo $file */
-                    foreach ($finder as $file) {
-                        yield $file->getRealPath() => str_replace('\\\\', '\\', '\\' . $namespace . '\\Entity\\' . str_replace('/', '\\', $file->getRelativePath()) . '\\' . $file->getBasename('.php'));
-                    }
-                }
+            try {
+                $finder->files()->name('*.php')->in($includeDir . '/Entity');
+            } catch (\InvalidArgumentException $e) {
+                continue;
             }
+
+            /** @var SplFileInfo $file */
+            foreach ($finder as $file) {
+                yield $file->getRealPath() => $this->buildClassName($namespace, $file);
+            }
+        }
+    }
+
+    /**
+     * @param $namespace
+     * @param SplFileInfo $file
+     * @return string
+     */
+    private function buildClassName($namespace, SplFileInfo $file)
+    {
+        return str_replace('\\\\', '\\', '\\' . $namespace . '\\Entity\\' . str_replace('/', '\\', $file->getRelativePath()) . '\\' . $file->getBasename('.php'));
+    }
+
+    /**
+     * @param ElasticsearchMapping $annotation
+     * @param \ReflectionCLass $class
+     */
+    private function ensurePropertiesExists(ElasticsearchMapping $annotation, \ReflectionCLass $class)
+    {
+        if (!isset($annotation->file)) {
+            throw new \RuntimeException('ElasticsearchMapping needs property "file" in ' . $class->getName());
+        }
+    }
+
+    /**
+     * @param string $file
+     * @param \ReflectionCLass $class
+     */
+    private function ensureFileExists($file, \ReflectionCLass $class)
+    {
+        if (!is_file($file)) {
+            throw new \RuntimeException('ElasticsearchMapping file "' . $file . '" not found in ' . $class->getName());
+        }
+    }
+
+    /**
+     * @param mixed $type
+     * @param string $file
+     */
+    private function ensureTypeValid($type, $file)
+    {
+        if (!is_string($type)) {
+            throw new \RuntimeException('ElasticsearchMapping not valid: ' . $file);
         }
     }
 }
