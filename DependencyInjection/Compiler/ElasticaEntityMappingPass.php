@@ -55,7 +55,7 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
     }
 
     /**
-     * @return \Generator
+     * @return string[]
      */
     private function yieldEntities()
     {
