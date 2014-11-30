@@ -16,13 +16,20 @@ class Factory
 {
     /** @var array */
     private $indices;
+
     /** @var boolean */
     private $shouldUpdate;
+
     /** @var array */
     private $watchdogs;
+
     /** @var LoggerInterface */
     private $logger;
 
+    /**
+     * @param array $config
+     * @param LoggerInterface $logger
+     */
     public function __construct(array $config, LoggerInterface $logger)
     {
         $this->indices = $config['indices'];
@@ -30,7 +37,12 @@ class Factory
         $this->logger = $logger;
     }
 
-    public function addWatchdog($type, $file, $indices)
+    /**
+     * @param string $type
+     * @param string $file
+     * @param array $indices
+     */
+    public function addWatchdog($type, $file, array $indices)
     {
         $mapping = json_decode(file_get_contents($file), true);
         $mapping = $mapping[$type]['properties'];
@@ -40,6 +52,9 @@ class Factory
         );
     }
 
+    /**
+     * @return Client
+     */
     public function createInstance()
     {
         /** @var Client $client */
@@ -55,6 +70,10 @@ class Factory
         return $client;
     }
 
+    /**
+     * @param Client $client
+     * @param IndexSettingsContainer $settingsContainer
+     */
     private function applyWatchdogs(Client $client, IndexSettingsContainer $settingsContainer)
     {
         foreach ($this->watchdogs as $typeName => $typeInfo) {
@@ -72,11 +91,20 @@ class Factory
         }
     }
 
+    /**
+     * @param $typeInfo
+     * @return bool
+     */
     private function noIndexRestraint($typeInfo)
     {
         return empty($typeInfo->indices);
     }
 
+    /**
+     * @param $typeInfo
+     * @param IndexSettingsContainer $settings
+     * @return bool
+     */
     private function fullfillsIndexRestraint($typeInfo, IndexSettingsContainer $settings)
     {
         return ($settings->getAlias() !== null && in_array($settings->getAlias(), $typeInfo->indices));
