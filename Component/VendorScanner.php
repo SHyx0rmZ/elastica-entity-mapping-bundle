@@ -22,7 +22,13 @@ class VendorScanner
         $vendorDir = __DIR__ . '/../../..';
 
         foreach ($this->autoloadDirs as $autoloadDir) {
-            $autoloadMaps = require($vendorDir . '/composer' . $autoloadDir);
+            $autoloadFile = $vendorDir . '/composer' . $autoloadDir;
+
+            if (!is_file($autoloadFile)) {
+                continue;
+            }
+
+            $autoloadMaps = require($autoloadFile);
 
             foreach ($autoloadMaps as $namespace => $autoloadMap) {
                 $namespace = $this->normalizeNamespace($namespace);
