@@ -1,9 +1,9 @@
 elastica-entity-mapping-bundle
 ==============================
-[![Latest Stable Version](https://poser.pugx.org/ppokatilo/elastica-entity-mapping-bundle/v/stable.svg)](https://packagist.org/packages/ppokatilo/elastica-entity-mapping-bundle)
-[![Total Downloads](https://poser.pugx.org/ppokatilo/elastica-entity-mapping-bundle/downloads.svg)](https://packagist.org/packages/ppokatilo/elastica-entity-mapping-bundle)
-[![Latest Unstable Version](https://poser.pugx.org/ppokatilo/elastica-entity-mapping-bundle/v/unstable.svg)](https://packagist.org/packages/ppokatilo/elastica-entity-mapping-bundle)
-[![License](https://poser.pugx.org/ppokatilo/elastica-entity-mapping-bundle/license.svg)](https://packagist.org/packages/ppokatilo/elastica-entity-mapping-bundle)
+[![Latest Stable Version](http://poser.services.witches.io/ppokatilo/elastica-entity-mapping-bundle/v/stable.svg)](https://packagist.org/packages/ppokatilo/elastica-entity-mapping-bundle)
+[![Total Downloads](http://poser.services.witches.io/ppokatilo/elastica-entity-mapping-bundle/downloads.svg)](https://packagist.org/packages/ppokatilo/elastica-entity-mapping-bundle)
+[![Latest Unstable Version](http://poser.services.witches.io/ppokatilo/elastica-entity-mapping-bundle/v/unstable.svg)](https://packagist.org/packages/ppokatilo/elastica-entity-mapping-bundle)
+[![License](http://poser.services.witches.io/ppokatilo/elastica-entity-mapping-bundle/license.svg)](https://packagist.org/packages/ppokatilo/elastica-entity-mapping-bundle)
 
 An Symfony2 bundle that automatically updates your Elasticsearch mappings or notifies you of changes.
 
