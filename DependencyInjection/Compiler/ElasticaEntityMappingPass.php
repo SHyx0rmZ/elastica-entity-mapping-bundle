@@ -28,7 +28,12 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
         $factory = $container->getDefinition('shyxormz.elastica.mapping.factory');
 
         foreach ($scanner->findInDirectory('Entity') as $scanResult) {
-            $class = new \ReflectionClass($scanResult->getReference());
+            try {
+                $class = new \ReflectionClass($scanResult->getReference());
+            } catch (\RuntimeException $e) {
+                continue;
+            }
+
             $annotation = $reader->getClassAnnotation($class, ElasticsearchMapping::class);
 
             /** @var ElasticsearchMapping $annotation */
