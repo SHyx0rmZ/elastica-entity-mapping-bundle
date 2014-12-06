@@ -5,6 +5,7 @@ namespace SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\Compiler;
 use Doctrine\Common\Annotations\AnnotationReader;
 use SHyx0rmZ\ElasticaEntityMapping\Annotation\ElasticsearchMapping;
 use SHyx0rmZ\ElasticaEntityMapping\Component\VendorScanner;
+use SHyx0rmZ\ProjectScanner\ProjectScanner;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\Finder\Finder;
@@ -22,18 +23,19 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
      */
     public function process(ContainerBuilder $container)
     {
+        $scanner = new ProjectScanner();
         $reader = new AnnotationReader();
         $factory = $container->getDefinition('shyxormz.elastica.mapping.factory');
 
-        foreach ($this->yieldEntities() as $path => $entity) {
-            $class = new \ReflectionClass($entity);
+        foreach ($scanner->findInDirectory('Entity') as $scanResult) {
+            $class = new \ReflectionClass($scanResult->getReference());
             $annotation = $reader->getClassAnnotation($class, ElasticsearchMapping::class);
 
             /** @var ElasticsearchMapping $annotation */
             if ($annotation) {
                 $this->ensurePropertiesExists($annotation, $class);
 
-                $file = dirname($path) . DIRECTORY_SEPARATOR . $annotation->file;
+                $file = dirname($scanResult->getFileInfo()->getPath()) . DIRECTORY_SEPARATOR . $annotation->file;
 
                 $this->ensureFileExists($file, $class);
 
@@ -51,39 +53,6 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
         $client = $container->getDefinition($alias);
         $client->setFactoryService('shyxormz.elastica.mapping.factory');
         $client->setFactoryMethod('createInstance');
-    }
-
-    /**
-     * @return string[]
-     */
-    private function yieldEntities()
-    {
-        $scanner = new VendorScanner();
-
-        foreach ($scanner->yieldIncludeDirectories() as $namespace => $includeDir) {
-            $finder = new Finder();
-
-            try {
-                $finder->files()->name('*.php')->in($includeDir . '/Entity');
-            } catch (\InvalidArgumentException $e) {
-                continue;
-            }
-
-            /** @var SplFileInfo $file */
-            foreach ($finder as $file) {
-                yield $file->getRealPath() => $this->buildClassName($namespace, $file);
-            }
-        }
-    }
-
-    /**
-     * @param $namespace
-     * @param SplFileInfo $file
-     * @return string
-     */
-    private function buildClassName($namespace, SplFileInfo $file)
-    {
-        return str_replace('\\\\', '\\', '\\' . $namespace . '\\Entity\\' . str_replace('/', '\\', $file->getRelativePath()) . '\\' . $file->getBasename('.php'));
     }
 
     /**
