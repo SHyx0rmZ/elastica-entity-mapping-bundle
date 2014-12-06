@@ -21,7 +21,7 @@ class Factory
     private $shouldUpdate;
 
     /** @var array */
-    private $watchdogs;
+    private $watchdogs = array();
 
     /** @var LoggerInterface */
     private $logger;
