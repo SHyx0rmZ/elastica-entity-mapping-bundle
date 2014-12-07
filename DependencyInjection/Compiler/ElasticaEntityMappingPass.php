@@ -43,23 +43,24 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
                     continue;
                 }
 
-                $annotation = $reader->getClassAnnotation($class, ElasticsearchMapping::class);
+                $annotations = $reader->getClassAnnotations($class);
 
-                /** @var ElasticsearchMapping $annotation */
-                if ($annotation) {
-                    $this->ensurePropertiesExists($annotation, $class);
+                foreach ($annotations as $annotation) {
+                    if ($annotation instanceof ElasticsearchMapping) {
+                        $this->ensurePropertiesExists($annotation, $class);
 
-                    $file = $scanResult->getFileInfo()->getPath() . DIRECTORY_SEPARATOR . $annotation->file;
+                        $file = $scanResult->getFileInfo()->getPath() . DIRECTORY_SEPARATOR . $annotation->file;
 
-                    $this->ensureFileExists($file, $class);
+                        $this->ensureFileExists($file, $class);
 
-                    $mapping = json_decode(file_get_contents($file), true);
-                    $type = array_keys($mapping)[0];
-                    $indices = empty($annotation->indices) ? array() : explode(',', $annotation->indices);
+                        $mapping = json_decode(file_get_contents($file), true);
+                        $type = array_keys($mapping)[0];
+                        $indices = empty($annotation->indices) ? array() : explode(',', $annotation->indices);
 
-                    $this->ensureTypeValid($type, $file);
+                        $this->ensureTypeValid($type, $file);
 
-                    $factory->addMethodCall('addWatchdog', array($type, $file, $indices));
+                        $factory->addMethodCall('addWatchdog', array($type, $file, $indices));
+                    }
                 }
             }
 

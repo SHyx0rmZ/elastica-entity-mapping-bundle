@@ -46,9 +46,10 @@ class Factory
     {
         $mapping = json_decode(file_get_contents($file), true);
         $mapping = $mapping[$type]['properties'];
-        $this->watchdogs[$type] = (object)array(
+        $this->watchdogs[] = (object)array(
             'mapping' => $mapping,
-            'indices' => $indices
+            'indices' => $indices,
+            'name' => $type
         );
     }
 
@@ -76,9 +77,9 @@ class Factory
      */
     private function applyWatchdogs(Client $client, IndexSettingsContainer $settingsContainer)
     {
-        foreach ($this->watchdogs as $typeName => $typeInfo) {
+        foreach ($this->watchdogs as $typeInfo) {
             if ($this->noIndexRestraint($typeInfo) || $this->fullfillsIndexRestraint($typeInfo, $settingsContainer)) {
-                $updater = new MappingUpdater($this->logger, $client, $settingsContainer, $typeName);
+                $updater = new MappingUpdater($this->logger, $client, $settingsContainer, $typeInfo->name);
 
                 if ($updater->needsUpdate($typeInfo->mapping)) {
                     if ($this->shouldUpdate) {
