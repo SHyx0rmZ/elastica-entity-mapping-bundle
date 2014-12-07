@@ -6,6 +6,7 @@ use Elastica\Client;
 use Psr\Log\LoggerInterface;
 use SHyx0rmZ\ElasticaEntityMapping\Component\IndexSettingsContainer;
 use SHyx0rmZ\ElasticaEntityMapping\Component\MappingUpdater;
+use SHyx0rmZ\ElasticaEntityMapping\Component\Watchdog;
 
 /**
  * Class Factory
@@ -20,7 +21,7 @@ class Factory
     /** @var boolean */
     private $shouldUpdate;
 
-    /** @var array */
+    /** @var Watchdog[] */
     private $watchdogs = array();
 
     /** @var LoggerInterface */
@@ -46,11 +47,7 @@ class Factory
     {
         $mapping = json_decode(file_get_contents($file), true);
         $mapping = $mapping[$type]['properties'];
-        $this->watchdogs[] = (object)array(
-            'mapping' => $mapping,
-            'indices' => $indices,
-            'name' => $type
-        );
+        $this->watchdogs[] = new Watchdog($type, $mapping, $indices);
     }
 
     /**
@@ -77,13 +74,13 @@ class Factory
      */
     private function applyWatchdogs(Client $client, IndexSettingsContainer $settingsContainer)
     {
-        foreach ($this->watchdogs as $typeInfo) {
-            if ($this->noIndexRestraint($typeInfo) || $this->fullfillsIndexRestraint($typeInfo, $settingsContainer)) {
-                $updater = new MappingUpdater($this->logger, $client, $settingsContainer, $typeInfo->name);
+        foreach ($this->watchdogs as $watchdog) {
+            if ($this->noIndexRestraint($watchdog) || $this->fulfillsIndexRestraint($watchdog, $settingsContainer)) {
+                $updater = new MappingUpdater($this->logger, $client, $settingsContainer, $watchdog->getType());
 
-                if ($updater->needsUpdate($typeInfo->mapping)) {
+                if ($updater->needsUpdate($watchdog->getMapping())) {
                     if ($this->shouldUpdate) {
-                        $updater->updateMapping($typeInfo->mapping, $settingsContainer->getSettings());
+                        $updater->updateMapping($watchdog->getMapping(), $settingsContainer->getSettings());
                     } else {
                         throw new \RuntimeException('Elasticsearch mapping changed: ' . $updater->getTypeAddress());
                     }
@@ -93,21 +90,21 @@ class Factory
     }
 
     /**
-     * @param $typeInfo
+     * @param Watchdog $watchdog
      * @return bool
      */
-    private function noIndexRestraint($typeInfo)
+    private function noIndexRestraint(Watchdog $watchdog)
     {
-        return empty($typeInfo->indices);
+        return empty($watchdog->getIndices());
     }
 
     /**
-     * @param $typeInfo
+     * @param Watchdog $watchdog
      * @param IndexSettingsContainer $settings
      * @return bool
      */
-    private function fullfillsIndexRestraint($typeInfo, IndexSettingsContainer $settings)
+    private function fulfillsIndexRestraint(Watchdog $watchdog, IndexSettingsContainer $settings)
     {
-        return ($settings->getAlias() !== null && in_array($settings->getAlias(), $typeInfo->indices));
+        return ($settings->getAlias() !== null && in_array($settings->getAlias(), $watchdog->getIndices()));
     }
 }
