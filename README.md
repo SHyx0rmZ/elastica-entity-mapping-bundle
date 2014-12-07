@@ -44,16 +44,18 @@ update the mapping automatically.
 
   ```yml
   elastica_entity_mapping:
-    client: elastica.client
-    update: false
-    indices:
+    clients:
       -
-        name: %elastica_index_name%
-        alias: dev
-        settings: vendor/example/entitybundle/settings.json
-      -
-        name: my_other_index
-        alias: other
+        service: elastica.client
+        update: false # throw exceptions instead of updating mapping automatically
+        indices:
+          -
+            name: %elastica_index_name%
+            alias: dev
+            settings: vendor/example/entitybundle/settings.json
+          -
+            name: my_other_index
+            alias: other
   ```
 
 - vendor/example/entitybundle/ExampleEntity.php
