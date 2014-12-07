@@ -23,23 +23,14 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
     {
         $scanner = new ProjectScanner();
         $reader = new AnnotationReader();
-        $autoloadedClasses = array();
 
         for ($index = 0; $container->hasDefinition('shyxormz.elastica.mapping.factory.' . $index); ++$index) {
             $factory = $container->getDefinition('shyxormz.elastica.mapping.factory.' . $index);
 
             foreach ($scanner->findInDirectory('Entity') as $scanResult) {
-                if (isset($autoloadedClasses[$scanResult->getReference()])) {
-                    continue;
-                }
+                $class = $this->getReflectionClass($scanResult->getReference());
 
-                try {
-                    $class = new \ReflectionClass($scanResult->getReference());
-                } catch (\RuntimeException $e) {
-                    if (!class_exists($scanResult->getReference(), false)) {
-                        $autoloadedClasses[$scanResult->getReference()] = true;
-                    }
-
+                if ($class === null) {
                     continue;
                 }
 
@@ -67,6 +58,29 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
             $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client.' . $index);
             $client = $container->getDefinition($alias);
             $client->setFactory(array(new Reference('shyxormz.elastica.mapping.factory.' . $index), 'createInstance'));
+        }
+    }
+
+    /**
+     * @param string $class
+     * @return \ReflectionClass|null
+     */
+    public function getReflectionClass($class)
+    {
+        static $autoloadedClasses = array();
+
+        if (isset($autoloadedClasses[$class])) {
+            return null;
+        }
+
+        try {
+            return new \ReflectionClass($class);
+        } catch (\RuntimeException $e) {
+            if (!class_exists($class, false)) {
+                $autoloadedClasses[$class] = true;
+            }
+
+            return null;
         }
     }
 
