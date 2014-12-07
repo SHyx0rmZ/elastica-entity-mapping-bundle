@@ -4,12 +4,10 @@ namespace SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\Compiler;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use SHyx0rmZ\ElasticaEntityMapping\Annotation\ElasticsearchMapping;
-use SHyx0rmZ\ElasticaEntityMapping\Component\VendorScanner;
 use SHyx0rmZ\ProjectScanner\ProjectScanner;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\SplFileInfo;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Class ElasticaEntityMappingPass
@@ -67,8 +65,7 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
 
             $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client.' . $index);
             $client = $container->getDefinition($alias);
-            $client->setFactoryService('shyxormz.elastica.mapping.factory.' . $index);
-            $client->setFactoryMethod('createInstance');
+            $client->setFactory(array(new Reference('shyxormz.elastica.mapping.factory.' . $index), 'createInstance'));
         }
     }
 

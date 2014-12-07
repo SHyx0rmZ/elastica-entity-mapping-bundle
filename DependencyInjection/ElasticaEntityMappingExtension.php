@@ -34,7 +34,6 @@ class ElasticaEntityMappingExtension extends Extension
 
         for ($index = 0; $index < count($config['clients']); ++$index) {
             $factory = $container->register('shyxormz.elastica.mapping.factory.' . $index, Factory::class);
-            $factory->setPublic(false);
             $factory->addArgument($config['clients'][$index]);
             $factory->addArgument(new Reference('logger'));
 
