@@ -19,13 +19,28 @@ class ElasticaEntityMappingExtension extends Extension
         $configuration = new ElasticaEntityMappingConfiguration();
 
         $config = $this->processConfiguration($configuration, $configs);
-        $factory = $container->register('shyxormz.elastica.mapping.factory', Factory::class);
-        $factory->setPublic(false);
-        $factory->addArgument($config);
-        $factory->addArgument(new Reference('logger'));
 
-        $container->setAlias('shyxormz.elastica.mapping.factory.client', $config['client']);
-        $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client');
-        $alias->setPublic(false);
+        $aliases = array();
+
+        foreach ($config['clients'] as $clientConfig) {
+            foreach ($clientConfig['indices'] as $indexConfig) {
+                if (isset($indexConfig['alias'], $aliases[$indexConfig['alias']])) {
+                    throw new \RuntimeException('Duplicate index alias encountered while building Elastica watchdogs: ' . $indexConfig['alias']);
+                }
+
+                $aliases[$indexConfig['alias']] = true;
+            }
+        }
+
+        for ($index = 0; $index < count($config['clients']); ++$index) {
+            $factory = $container->register('shyxormz.elastica.mapping.factory.' . $index, Factory::class);
+            $factory->setPublic(false);
+            $factory->addArgument($config['clients'][$index]);
+            $factory->addArgument(new Reference('logger'));
+
+            $container->setAlias('shyxormz.elastica.mapping.factory.client.' . $index, $config['clients'][$index]['service']);
+            $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client.' . $index);
+            $alias->setPublic(false);
+        }
     }
 }

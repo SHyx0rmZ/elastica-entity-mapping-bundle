@@ -1,6 +1,7 @@
 <?php
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
+use SHyx0rmZ\ProjectScanner\Util\Util;
 
 /**
  * Class IndexSettingContainer
@@ -44,7 +45,7 @@ class IndexSettingsContainer
         $settings = @$this->config['settings'];
 
         if ($settings !== null) {
-            $file = __DIR__ . '/../../../../' . $settings;
+            $file = Util::modifyPath(__DIR__, '../../../../' . $settings);
 
             if (!is_file($file)) {
                 throw new \RuntimeException('ElasticsearchMapping file "' . $file . '" not found');

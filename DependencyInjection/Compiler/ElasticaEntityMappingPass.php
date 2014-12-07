@@ -25,39 +25,51 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
     {
         $scanner = new ProjectScanner();
         $reader = new AnnotationReader();
-        $factory = $container->getDefinition('shyxormz.elastica.mapping.factory');
+        $autoloadedClasses = array();
 
-        foreach ($scanner->findInDirectory('Entity') as $scanResult) {
-            try {
-                $class = new \ReflectionClass($scanResult->getReference());
-            } catch (\RuntimeException $e) {
-                continue;
+        for ($index = 0; $container->hasDefinition('shyxormz.elastica.mapping.factory.' . $index); ++$index) {
+            $factory = $container->getDefinition('shyxormz.elastica.mapping.factory.' . $index);
+
+            foreach ($scanner->findInDirectory('Entity') as $scanResult) {
+                if (isset($autoloadedClasses[$scanResult->getReference()])) {
+                    continue;
+                }
+
+                try {
+                    $class = new \ReflectionClass($scanResult->getReference());
+                } catch (\RuntimeException $e) {
+                    if (!class_exists($scanResult->getReference(), false)) {
+                        $autoloadedClasses[$scanResult->getReference()] = true;
+                    }
+
+                    continue;
+                }
+
+                $annotation = $reader->getClassAnnotation($class, ElasticsearchMapping::class);
+
+                /** @var ElasticsearchMapping $annotation */
+                if ($annotation) {
+                    $this->ensurePropertiesExists($annotation, $class);
+
+                    $file = $scanResult->getFileInfo()->getPath() . DIRECTORY_SEPARATOR . $annotation->file;
+
+                    $this->ensureFileExists($file, $class);
+
+                    $mapping = json_decode(file_get_contents($file), true);
+                    $type = array_keys($mapping)[0];
+                    $indices = empty($annotation->indices) ? array() : explode(',', $annotation->indices);
+
+                    $this->ensureTypeValid($type, $file);
+
+                    $factory->addMethodCall('addWatchdog', array($type, $file, $indices));
+                }
             }
 
-            $annotation = $reader->getClassAnnotation($class, ElasticsearchMapping::class);
-
-            /** @var ElasticsearchMapping $annotation */
-            if ($annotation) {
-                $this->ensurePropertiesExists($annotation, $class);
-
-                $file = dirname($scanResult->getFileInfo()->getPath()) . DIRECTORY_SEPARATOR . $annotation->file;
-
-                $this->ensureFileExists($file, $class);
-
-                $mapping = json_decode(file_get_contents($file), true);
-                $type = array_keys($mapping)[0];
-                $indices = empty($annotation->indices) ? array() : explode(',', $annotation->indices);
-
-                $this->ensureTypeValid($type, $file);
-
-                $factory->addMethodCall('addWatchdog', array($type, $file, $indices));
-            }
+            $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client.' . $index);
+            $client = $container->getDefinition($alias);
+            $client->setFactoryService('shyxormz.elastica.mapping.factory.' . $index);
+            $client->setFactoryMethod('createInstance');
         }
-
-        $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client');
-        $client = $container->getDefinition($alias);
-        $client->setFactoryService('shyxormz.elastica.mapping.factory');
-        $client->setFactoryMethod('createInstance');
     }
 
     /**
