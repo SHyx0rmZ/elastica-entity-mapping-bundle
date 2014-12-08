@@ -5,8 +5,10 @@ namespace SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\Compiler;
 use Doctrine\Common\Annotations\AnnotationReader;
 use SHyx0rmZ\ElasticaEntityMapping\Annotation\ElasticsearchMapping;
 use SHyx0rmZ\ProjectScanner\ProjectScanner;
+use SHyx0rmZ\ProjectScanner\ScanResult\ScanResultInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
@@ -36,28 +38,43 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
 
                 $annotations = $reader->getClassAnnotations($class);
 
-                foreach ($annotations as $annotation) {
-                    if ($annotation instanceof ElasticsearchMapping) {
-                        $this->ensurePropertiesExists($annotation, $class);
-
-                        $file = $scanResult->getFileInfo()->getPath() . DIRECTORY_SEPARATOR . $annotation->file;
-
-                        $this->ensureFileExists($file, $class);
-
-                        $mapping = json_decode(file_get_contents($file), true);
-                        $type = array_keys($mapping)[0];
-                        $indices = empty($annotation->indices) ? array() : explode(',', $annotation->indices);
-
-                        $this->ensureTypeValid($type, $file);
-
-                        $factory->addMethodCall('addWatchdog', array($type, $file, $indices));
-                    }
-                }
+                $this->processAnnotations($class, $annotations, $scanResult, $factory);
             }
 
             $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client.' . $index);
             $client = $container->getDefinition($alias);
             $client->setFactory(array(new Reference('shyxormz.elastica.mapping.factory.' . $index), 'createInstance'));
+        }
+    }
+
+    /**
+     * @param \ReflectionClass $class
+     * @param ElasticsearchMapping[] $annotations
+     * @param ScanResultInterface $scanResult
+     * @param Definition $factory
+     */
+    private function processAnnotations(
+        \ReflectionClass $class,
+        array $annotations,
+        ScanResultInterface $scanResult,
+        Definition $factory
+    ) {
+        foreach ($annotations as $annotation) {
+            if ($annotation instanceof ElasticsearchMapping) {
+                $this->ensurePropertiesExists($annotation, $class);
+
+                $file = $scanResult->getFileInfo()->getPath() . DIRECTORY_SEPARATOR . $annotation->file;
+
+                $this->ensureFileExists($file, $class);
+
+                $mapping = json_decode(file_get_contents($file), true);
+                $type = array_keys($mapping)[0];
+                $indices = empty($annotation->indices) ? array() : explode(',', $annotation->indices);
+
+                $this->ensureTypeValid($type, $file);
+
+                $factory->addMethodCall('addWatchdog', array($type, $file, $indices));
+            }
         }
     }
 
