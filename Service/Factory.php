@@ -3,8 +3,11 @@
 namespace SHyx0rmZ\ElasticaEntityMapping\Service;
 
 use Elastica\Client;
+use Elastica\Index;
+use Elastica\Type;
 use Psr\Log\LoggerInterface;
 use SHyx0rmZ\ElasticaEntityMapping\Component\IndexSettingsContainer;
+use SHyx0rmZ\ElasticaEntityMapping\Component\MappingConflictDetector;
 use SHyx0rmZ\ElasticaEntityMapping\Component\MappingUpdater;
 use SHyx0rmZ\ElasticaEntityMapping\Component\Watchdog;
 
@@ -47,7 +50,7 @@ class Factory
     {
         $mapping = json_decode(file_get_contents($file), true);
         $mapping = $mapping[$type]['properties'];
-        $this->watchdogs[] = new Watchdog($type, $mapping, $indices);
+        $this->watchdogs[] = new Watchdog($type, $mapping, $indices, $file);
     }
 
     /**
@@ -74,9 +77,29 @@ class Factory
      */
     private function applyWatchdogs(Client $client, IndexSettingsContainer $settingsContainer)
     {
+        $detector = new MappingConflictDetector($this->logger);
+
+        foreach ($this->watchdogs as $watchdog) {
+            $type = new Type(new Index($client, $settingsContainer->getName()), $watchdog->getTypeName());
+
+            $detector->remember($watchdog, $type);
+
+            $watchdog->setType($type);
+        }
+
+        if (($conflict = $detector->detectConflict()) !== null) {
+            throw new \RuntimeException(
+                'Elasticsearch mapping conflict detected: ' . PHP_EOL
+                . '- address : ' . $conflict['address'] . PHP_EOL
+                . '- file1   : ' . $conflict['file1'] . PHP_EOL
+                . '- file2   : ' . $conflict['file2'] . PHP_EOL
+                . '- field   : ' . $conflict['field']
+            );
+        }
+
         foreach ($this->watchdogs as $watchdog) {
             if ($this->noIndexRestraint($watchdog) || $this->fulfillsIndexRestraint($watchdog, $settingsContainer)) {
-                $updater = new MappingUpdater($this->logger, $client, $settingsContainer, $watchdog->getType());
+                $updater = new MappingUpdater($this->logger, $watchdog->getType());
 
                 if ($updater->needsUpdate($watchdog->getMapping())) {
                     if ($this->shouldUpdate) {

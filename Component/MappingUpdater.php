@@ -2,7 +2,6 @@
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
 
-use Elastica\Client;
 use Elastica\Exception\ResponseException;
 use Elastica\Index;
 use Elastica\Type;
@@ -17,8 +16,6 @@ class MappingUpdater
 {
     /** @var LoggerInterface */
     private $logger;
-    /** @var Client */
-    private $client;
     /** @var Index */
     private $index;
     /** @var Type */
@@ -26,16 +23,13 @@ class MappingUpdater
 
     /**
      * @param LoggerInterface $logger
-     * @param Client $client
-     * @param IndexSettingsContainer $config
      * @param $type
      */
-    public function __construct(LoggerInterface $logger, Client $client, IndexSettingsContainer $config, $type)
+    public function __construct(LoggerInterface $logger, Type $type)
     {
         $this->logger = $logger;
-        $this->client = $client;
-        $this->index = new Index($this->client, $config->getName());
-        $this->type = new Type($this->index, $type);
+        $this->index = $type->getIndex();
+        $this->type = $type;
     }
 
     /**
@@ -55,10 +49,7 @@ class MappingUpdater
      */
     public function getIndexAddress()
     {
-        $indexName = $this->index->getName();
-        $connection = $this->client->getConnection();
-
-        return strtolower($connection->getTransport()) . '://' . $connection->getHost() . ':' . $connection->getPort() . '/' . $indexName;
+        return AddressFormatter::getIndexAddress($this->index);
     }
 
     /**
@@ -66,9 +57,7 @@ class MappingUpdater
      */
     public function getTypeAddress()
     {
-        $typeName = $this->type->getName();
-
-        return $this->getIndexAddress() . '/' . $typeName;
+        return AddressFormatter::getTypeAddress($this->type);
     }
 
     /**

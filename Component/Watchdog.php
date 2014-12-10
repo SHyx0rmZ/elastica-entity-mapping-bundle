@@ -1,32 +1,85 @@
 <?php
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
+use Elastica\Type;
 
+/**
+ * Class Watchdog
+ * @package SHyx0rmZ\ElasticaEntityMapping\Component
+ * @author Patrick Pokatilo <mail@shyxormz.net>
+ */
 class Watchdog
 {
+    /** @var array */
     private $mapping;
+    /** @var string[] */
     private $indices;
-    private $type;
+    /** @var string */
+    private $typeName;
+    /** @var Type */
+    private $type = null;
+    /** @var string */
+    private $fileName;
 
-    public function __construct($type, $mapping, $indices)
+    /**
+     * @param string $typeName
+     * @param array $mapping
+     * @param array $indices
+     * @param string $fileName
+     */
+    public function __construct($typeName, array $mapping, array $indices, $fileName)
     {
-        $this->type = $type;
+        $this->typeName = $typeName;
         $this->mapping = $mapping;
         $this->indices = $indices;
+        $this->fileName = $fileName;
     }
 
+    /**
+     * @return string
+     */
+    public function getFileName()
+    {
+        return $this->fileName;
+    }
+
+    /**
+     * @return string[]
+     */
     public function getIndices()
     {
         return $this->indices;
     }
 
+    /**
+     * @return array
+     */
     public function getMapping()
     {
         return $this->mapping;
     }
 
+    /**
+     * @return string
+     */
+    public function getTypeName()
+    {
+        return $this->typeName;
+    }
+
+    /**
+     * @return Type
+     */
     public function getType()
     {
         return $this->type;
+    }
+
+    /**
+     * @param Type $type
+     */
+    public function setType(Type $type)
+    {
+        $this->type = $type;
     }
 }
