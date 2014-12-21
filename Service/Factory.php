@@ -88,13 +88,7 @@ class Factory
         }
 
         if (($conflict = $detector->detectConflict()) !== null) {
-            throw new \RuntimeException(
-                'Elasticsearch mapping conflict detected: ' . PHP_EOL
-                . '- address : ' . $conflict['address'] . PHP_EOL
-                . '- file1   : ' . $conflict['file1'] . PHP_EOL
-                . '- file2   : ' . $conflict['file2'] . PHP_EOL
-                . '- field   : ' . $conflict['field']
-            );
+            throw new \RuntimeException($conflict->getMessage());
         }
 
         foreach ($this->watchdogs as $watchdog) {

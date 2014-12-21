@@ -14,7 +14,7 @@ class MappingConflictDetector
 {
     /** @var LoggerInterface */
     private $logger;
-    /** @var array */
+    /** @var Mapping[] */
     private $mappings = array();
 
     /**
@@ -31,43 +31,43 @@ class MappingConflictDetector
      */
     public function remember(Watchdog $watchdog, Type $type)
     {
-        $this->mappings[] = (object)array(
-            'mapping' => $watchdog->getMapping(),
-            'file' => $watchdog->getFileName(),
-            'type' => $type
+        $this->mappings[] = new Mapping(
+            $watchdog->getMapping(),
+            $watchdog->getFileName(),
+            $type
         );
     }
 
     /**
-     * @return array|null
+     * @return MappingConflict|null
      */
     public function detectConflict()
     {
         $resolvedMappings = array();
 
         foreach ($this->mappings as $comparable) {
-            $indexAddress = AddressFormatter::getIndexAddress($comparable->type->getIndex());
-            $typeAddress = AddressFormatter::getTypeAddress($comparable->type);
+            $indexAddress = AddressFormatter::getIndexAddress($comparable->getType()->getIndex());
+            $typeAddress = AddressFormatter::getTypeAddress($comparable->getType());
 
             if (!isset($resolvedMappings)) {
                 $resolvedMappings[$indexAddress] = array();
             }
 
             if (isset($resolvedMappings[$indexAddress][$typeAddress])
-                && $resolvedMappings[$indexAddress][$typeAddress][0] != $comparable->mapping) {
+                && $resolvedMappings[$indexAddress][$typeAddress][0] != $comparable->getMapping()) {
                 $array1 = $resolvedMappings[$indexAddress][$typeAddress][0];
-                $array2 = $comparable->mapping;
+                $array2 = $comparable->getMapping();
 
                 $field = $this->compare($array1, $array2);
 
-                return array(
-                    'address' => $typeAddress,
-                    'file1' => $resolvedMappings[$indexAddress][$typeAddress][1],
-                    'file2' => $comparable->file,
-                    'field' => $field
+                return new MappingConflict(
+                    $typeAddress,
+                    $resolvedMappings[$indexAddress][$typeAddress][1],
+                    $comparable->getFileName(),
+                    $field
                 );
             } else {
-                $resolvedMappings[$indexAddress][$typeAddress] = [ $comparable->mapping, $comparable->file ];
+                $resolvedMappings[$indexAddress][$typeAddress] = [ $comparable->getMapping(), $comparable->getFileName() ];
             }
         }
 

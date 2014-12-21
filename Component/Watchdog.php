@@ -1,6 +1,7 @@
 <?php
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
+
 use Elastica\Type;
 
 /**
