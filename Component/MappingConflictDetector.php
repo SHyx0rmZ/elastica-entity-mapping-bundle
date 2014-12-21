@@ -3,7 +3,6 @@
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
 
 use Elastica\Type;
-use Psr\Log\LoggerInterface;
 
 /**
  * Class MappingConflictDetector
@@ -12,19 +11,6 @@ use Psr\Log\LoggerInterface;
  */
 class MappingConflictDetector
 {
-    /** @var LoggerInterface */
-    private $logger;
-    /** @var Mapping[] */
-    private $mappings = array();
-
-    /**
-     * @param LoggerInterface $logger
-     */
-    public function __construct(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
     /**
      * @param Watchdog $watchdog
      * @param Type $type
@@ -41,33 +27,64 @@ class MappingConflictDetector
     /**
      * @return MappingConflict|null
      */
-    public function detectConflict()
+    public function detectDifferentTypeConflict()
     {
+        /* This is ugly, @fixme later */
+        for ($i = 0; $i < count($this->mappings); ++$i) {
+            for ($j = $i + 1; $j < count($this->mappings); ++$j) {
+                $mappingA = $this->mappings[$i];
+                $mappingB = $this->mappings[$j];
+                $addressIndexA = AddressFormatter::getIndexAddress($mappingA->getType()->getIndex());
+                $addressIndexB = AddressFormatter::getIndexAddress($mappingB->getType()->getIndex());
+
+                if ($addressIndexA != $addressIndexB) {
+                    continue;
+                }
+
+                $field = $this->compareFieldTypes($mappingA->getMapping(), $mappingB->getMapping());
+
+                if ($field != '') {
+                    return new MappingConflict(
+                        AddressFormatter::getTypeAddress($mappingA->getType()),
+                        AddressFormatter::getTypeAddress($mappingB->getType()),
+                        $mappingA->getFileName(),
+                        $mappingB->getFileName(),
+                        $field
+                    );
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @return MappingConflict|null
+     */
+    public function detectSameTypeConflict()
+    {
+        /** @var Mapping[] $resolvedMappings */
         $resolvedMappings = array();
 
         foreach ($this->mappings as $comparable) {
-            $indexAddress = AddressFormatter::getIndexAddress($comparable->getType()->getIndex());
-            $typeAddress = AddressFormatter::getTypeAddress($comparable->getType());
+            $address = AddressFormatter::getIndexAddress($comparable->getType()->getIndex());
 
-            if (!isset($resolvedMappings)) {
-                $resolvedMappings[$indexAddress] = array();
-            }
-
-            if (isset($resolvedMappings[$indexAddress][$typeAddress])
-                && $resolvedMappings[$indexAddress][$typeAddress][0] != $comparable->getMapping()) {
-                $array1 = $resolvedMappings[$indexAddress][$typeAddress][0];
+            if (isset($resolvedMappings[$address])
+                && $resolvedMappings[$address]->getMapping() != $comparable->getMapping()) {
+                $array1 = $resolvedMappings[$address]->getMapping();
                 $array2 = $comparable->getMapping();
 
-                $field = $this->compare($array1, $array2);
+                $field = $this->compareFieldTypes($array1, $array2);
 
                 return new MappingConflict(
-                    $typeAddress,
-                    $resolvedMappings[$indexAddress][$typeAddress][1],
+                    AddressFormatter::getTypeAddress($resolvedMappings[$address]->getType()),
+                    AddressFormatter::getTypeAddress($comparable->getType()),
+                    $resolvedMappings[$address]->getFileName(),
                     $comparable->getFileName(),
                     $field
                 );
             } else {
-                $resolvedMappings[$indexAddress][$typeAddress] = [ $comparable->getMapping(), $comparable->getFileName() ];
+                $resolvedMappings[$address] = $comparable;
             }
         }
 
@@ -80,7 +97,7 @@ class MappingConflictDetector
      * @param string $field
      * @return string
      */
-    private function compare(array $array1, array $array2, $field = '')
+    private function compareFieldTypes(array $array1, array $array2, $field = '')
     {
         foreach ($array1 as $key => $value) {
             if (!isset($array2[$key])) {
@@ -88,10 +105,10 @@ class MappingConflictDetector
             }
 
             if (is_array($array1[$key]) && is_array($array2[$key])) {
-                $field = $this->compare($array1[$key], $array2[$key], $key);
+                $result = $this->compareFieldTypes($array1[$key], $array2[$key], $key);
 
-                if ($field != $key) {
-                    break;
+                if ($result != $key) {
+                    return $result;
                 }
             } elseif ($array1[$key] != $array2[$key]) {
                 $field .= ($field ? '.' : '') . $key;

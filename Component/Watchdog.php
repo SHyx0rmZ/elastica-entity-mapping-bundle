@@ -17,8 +17,6 @@ class Watchdog
     private $indices;
     /** @var string */
     private $typeName;
-    /** @var Type */
-    private $type = null;
     /** @var string */
     private $fileName;
 
@@ -66,21 +64,5 @@ class Watchdog
     public function getTypeName()
     {
         return $this->typeName;
-    }
-
-    /**
-     * @return Type
-     */
-    public function getType()
-    {
-        return $this->type;
-    }
-
-    /**
-     * @param Type $type
-     */
-    public function setType(Type $type)
-    {
-        $this->type = $type;
     }
 }

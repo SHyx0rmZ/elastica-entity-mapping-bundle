@@ -5,7 +5,9 @@ namespace SHyx0rmZ\ElasticaEntityMapping\Component;
 class MappingConflict
 {
     /** @var string */
-    private $address;
+    private $addressA;
+    /** @var string */
+    private $addressB;
     /** @var string */
     private $fileA;
     /** @var string */
@@ -13,9 +15,10 @@ class MappingConflict
     /** @var string */
     private $field;
 
-    public function __construct($address, $fileA, $fileB, $field)
+    public function __construct($addressA, $addressB, $fileA, $fileB, $field)
     {
-        $this->address = $address;
+        $this->addressA = $addressA;
+        $this->addressB = $addressB;
         $this->fileA = $fileA;
         $this->fileB = $fileB;
         $this->field = $field;
@@ -23,30 +26,26 @@ class MappingConflict
 
     public function getMessage()
     {
-        return 'Elasticsearch mapping conflict detected: ' . PHP_EOL
-        . '- address : ' . $this->getAddress() . PHP_EOL
-        . '- file1   : ' . $this->getFileA() . PHP_EOL
-        . '- file2   : ' . $this->getFileB() . PHP_EOL
-        . '- field   : ' . $this->getField();
-    }
+        $message = 'Elasticsearch mapping conflict detected: ' . PHP_EOL;
 
-    private function getAddress()
-    {
-        return $this->address;
-    }
+        if ($this->addressA == $this->addressB) {
+            $message .=
+                '- address  : ' . $this->addressA . PHP_EOL .
+                '- info     : Multiple field types on the same type in same index.' . PHP_EOL .
+                '             You will not end up with the mapping you want.' . PHP_EOL;
+        } else {
+            $message .=
+                '- address1 : ' . $this->addressA . PHP_EOL .
+                '- address2 : ' . $this->addressB . PHP_EOL .
+                '- info     : Multiple field types on similiarly named fields.' . PHP_EOL .
+                '           : This will seriously screw up your searches.' . PHP_EOL;
+        }
 
-    private function getFileA()
-    {
-        return $this->fileA;
-    }
+        $message .=
+            '- file1    : ' . $this->fileA . PHP_EOL .
+            '- file2    : ' . $this->fileB . PHP_EOL .
+            '- field    : ' . $this->field;
 
-    private function getFileB()
-    {
-        return $this->fileB;
-    }
-
-    private function getField()
-    {
-        return $this->field;
+        return $message;
     }
 }

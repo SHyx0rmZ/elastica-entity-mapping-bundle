@@ -62,6 +62,8 @@ class Factory
         $class = new \ReflectionClass(Client::class);
         $client = $class->newInstanceArgs(func_get_args());
 
+        $this->detectConflicts($client);
+
         foreach ($this->indices as $indexConfig) {
             $settingsContainer = new IndexSettingsContainer($indexConfig);
 
@@ -77,23 +79,10 @@ class Factory
      */
     private function applyWatchdogs(Client $client, IndexSettingsContainer $settingsContainer)
     {
-        $detector = new MappingConflictDetector($this->logger);
-
-        foreach ($this->watchdogs as $watchdog) {
-            $type = new Type(new Index($client, $settingsContainer->getName()), $watchdog->getTypeName());
-
-            $detector->remember($watchdog, $type);
-
-            $watchdog->setType($type);
-        }
-
-        if (($conflict = $detector->detectConflict()) !== null) {
-            throw new \RuntimeException($conflict->getMessage());
-        }
-
         foreach ($this->watchdogs as $watchdog) {
             if ($this->noIndexRestraint($watchdog) || $this->fulfillsIndexRestraint($watchdog, $settingsContainer)) {
-                $updater = new MappingUpdater($this->logger, $watchdog->getType());
+                $type = new Type(new Index($client, $settingsContainer->getName()), $watchdog->getTypeName());
+                $updater = new MappingUpdater($this->logger, $type);
 
                 if ($updater->needsUpdate($watchdog->getMapping())) {
                     if ($this->shouldUpdate) {
@@ -103,6 +92,36 @@ class Factory
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * @param Client $client
+     */
+    private function detectConflicts(Client $client)
+    {
+        $differentTypesDetector = new MappingConflictDetector();
+
+        foreach ($this->indices as $indexConfig) {
+            $settingsContainer = new IndexSettingsContainer($indexConfig);
+            $sameTypeDetector = new MappingConflictDetector();
+
+            foreach ($this->watchdogs as $watchdog) {
+                $type = new Type(new Index($client, $settingsContainer->getName()), $watchdog->getTypeName());
+
+                if ($this->noIndexRestraint($watchdog) || $this->fulfillsIndexRestraint($watchdog, $settingsContainer)) {
+                    $differentTypesDetector->remember($watchdog, $type);
+                    $sameTypeDetector->remember($watchdog, $type);
+                }
+            }
+
+            if (($conflict = $sameTypeDetector->detectSameTypeConflict()) !== null) {
+                throw new \RuntimeException($conflict->getMessage());
+            }
+        }
+
+        if (($conflict = $differentTypesDetector->detectDifferentTypeConflict()) !== null) {
+            throw new \RuntimeException($conflict->getMessage());
         }
     }
 
