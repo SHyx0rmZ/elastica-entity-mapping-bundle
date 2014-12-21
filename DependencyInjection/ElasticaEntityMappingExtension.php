@@ -16,8 +16,7 @@ class ElasticaEntityMappingExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container)
     {
-        $configuration = new ElasticaEntityMappingConfiguration();
-
+        $configuration = $this->getConfiguration($configs, $container);
         $config = $this->processConfiguration($configuration, $configs);
 
         $aliases = array();
@@ -41,5 +40,10 @@ class ElasticaEntityMappingExtension extends Extension
             $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client.' . $index);
             $alias->setPublic(false);
         }
+    }
+
+    public function getConfiguration(array $configs, ContainerBuilder $container)
+    {
+        return new ElasticaEntityMappingConfiguration();
     }
 }
