@@ -11,6 +11,9 @@ use Elastica\Type;
  */
 class MappingConflictDetector
 {
+    /** @var Mapping[] */
+    private $mappings = array();
+
     /**
      * @param Watchdog $watchdog
      * @param Type $type
