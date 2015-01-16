@@ -3,6 +3,7 @@
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
 
 use Psr\Log\LoggerInterface;
+use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\ElasticsearchException;
 use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\IndexWrapper;
 use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\TypeWrapper;
 
@@ -65,16 +66,16 @@ class MappingUpdater
      */
     public function updateMapping(array $mapping, array $settings = array())
     {
-        if ($this->updateType($mapping) !== true) {
+        try {
+            $this->updateType($mapping);
+        } catch (ElasticsearchException $e) {
             $this->logger->error('Error while updating elasticsearch mapping, trying to update settings');
 
             if ($settings != array()) {
                 $this->updateIndex($settings);
             }
 
-            if ($this->updateType($mapping) !== true) {
-                throw new \RuntimeException('Error while updating elasticsearch mapping: ' . $this->getIndexAddress());
-            }
+            $this->updateType($mapping);
         }
     }
 

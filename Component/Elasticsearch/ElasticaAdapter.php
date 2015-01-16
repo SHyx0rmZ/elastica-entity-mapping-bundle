@@ -85,10 +85,8 @@ class ElasticaAdapter implements ElasticsearchConnectorInterface
         try {
             $type->setMapping($mapping);
         } catch (ResponseException $e) {
-            return false;
+            throw new ElasticsearchException($e->getMessage(), $e->getCode());
         }
-
-        return true;
     }
 
     /**

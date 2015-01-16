@@ -43,7 +43,7 @@ interface ElasticsearchConnectorInterface
      * @param string $indexName
      * @param string $typeName
      * @param array $mapping
-     * @return bool
+     * @throws ElasticsearchException
      */
     public function setMapping($indexName, $typeName, array $mapping);
 
