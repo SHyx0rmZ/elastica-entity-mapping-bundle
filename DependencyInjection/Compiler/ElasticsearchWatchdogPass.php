@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\Reference;
  * @package SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\Compiler
  * @author Patrick Pokatilo <mail@shyxormz.net>
  */
-class ElasticaEntityMappingPass implements CompilerPassInterface
+class ElasticsearchWatchdogPass implements CompilerPassInterface
 {
     /**
      * @param ContainerBuilder $container
@@ -44,6 +44,8 @@ class ElasticaEntityMappingPass implements CompilerPassInterface
             $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client.' . $index);
             $client = $container->getDefinition($alias);
             $client->setFactory(array(new Reference('shyxormz.elastica.mapping.factory.' . $index), 'createInstance'));
+
+            $factory->addArgument($client->getClass());
         }
     }
 

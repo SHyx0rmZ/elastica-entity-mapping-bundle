@@ -2,7 +2,7 @@
 
 namespace SHyx0rmZ\ElasticaEntityMapping;
 
-use SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\Compiler\ElasticaEntityMappingPass;
+use SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\Compiler\ElasticsearchWatchdogPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
@@ -12,6 +12,6 @@ class ElasticaEntityMappingBundle extends Bundle
     {
         parent::build($container);
 
-        $container->addCompilerPass(new ElasticaEntityMappingPass());
+        $container->addCompilerPass(new ElasticsearchWatchdogPass());
     }
 }

@@ -2,8 +2,6 @@
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
 
-use Elastica\Type;
-
 /**
  * Class Watchdog
  * @package SHyx0rmZ\ElasticaEntityMapping\Component

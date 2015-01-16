@@ -2,7 +2,7 @@
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
 
-use Elastica\Type;
+use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\TypeWrapper;
 
 class Mapping
 {
@@ -10,10 +10,10 @@ class Mapping
     private $mapping;
     /** @var string */
     private $fileName;
-    /** @var Type */
+    /** @var TypeWrapper */
     private $type;
 
-    public function __construct(array $mapping, $file, Type $type)
+    public function __construct(array $mapping, $file, TypeWrapper $type)
     {
         $this->mapping = $mapping;
         $this->fileName = $file;

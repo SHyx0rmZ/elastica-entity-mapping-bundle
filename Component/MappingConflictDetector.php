@@ -2,7 +2,7 @@
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
 
-use Elastica\Type;
+use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\TypeWrapper;
 
 /**
  * Class MappingConflictDetector
@@ -16,9 +16,9 @@ class MappingConflictDetector
 
     /**
      * @param Watchdog $watchdog
-     * @param Type $type
+     * @param TypeWrapper $type
      */
-    public function remember(Watchdog $watchdog, Type $type)
+    public function remember(Watchdog $watchdog, TypeWrapper $type)
     {
         $this->mappings[] = new Mapping(
             $watchdog->getMapping(),
@@ -37,8 +37,8 @@ class MappingConflictDetector
             for ($j = $i + 1; $j < count($this->mappings); ++$j) {
                 $mappingA = $this->mappings[$i];
                 $mappingB = $this->mappings[$j];
-                $addressIndexA = AddressFormatter::getIndexAddress($mappingA->getType()->getIndex());
-                $addressIndexB = AddressFormatter::getIndexAddress($mappingB->getType()->getIndex());
+                $addressIndexA = $mappingA->getType()->getIndex()->formatAddress();
+                $addressIndexB = $mappingB->getType()->getIndex()->formatAddress();
 
                 if ($addressIndexA != $addressIndexB) {
                     continue;
@@ -48,8 +48,8 @@ class MappingConflictDetector
 
                 if ($field != '') {
                     return new MappingConflict(
-                        AddressFormatter::getTypeAddress($mappingA->getType()),
-                        AddressFormatter::getTypeAddress($mappingB->getType()),
+                        $mappingA->getType()->formatAddress(),
+                        $mappingB->getType()->formatAddress(),
                         $mappingA->getFileName(),
                         $mappingB->getFileName(),
                         $field
@@ -70,7 +70,7 @@ class MappingConflictDetector
         $resolvedMappings = array();
 
         foreach ($this->mappings as $comparable) {
-            $address = AddressFormatter::getIndexAddress($comparable->getType()->getIndex());
+            $address = $comparable->getType()->getIndex()->formatAddress();
 
             if (isset($resolvedMappings[$address])
                 && $resolvedMappings[$address]->getMapping() != $comparable->getMapping()) {
@@ -80,8 +80,8 @@ class MappingConflictDetector
                 $field = $this->compareFieldTypes($array1, $array2);
 
                 return new MappingConflict(
-                    AddressFormatter::getTypeAddress($resolvedMappings[$address]->getType()),
-                    AddressFormatter::getTypeAddress($comparable->getType()),
+                    $resolvedMappings[$address]->getType()->formatAddress(),
+                    $comparable->getType()->formatAddress(),
                     $resolvedMappings[$address]->getFileName(),
                     $comparable->getFileName(),
                     $field

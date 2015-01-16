@@ -10,7 +10,7 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
  * @package SHyx0rmZ\ElasticaEntityMapping\DependencyInjection
  * @author Patrick Pokatilo <mail@shyxormz.net>
  */
-class ElasticaEntityMappingConfiguration implements ConfigurationInterface
+class ExtensionConfiguration implements ConfigurationInterface
 {
     public function getConfigTreeBuilder()
     {
@@ -18,7 +18,6 @@ class ElasticaEntityMappingConfiguration implements ConfigurationInterface
         $root = $builder->root('elastica_entity_mapping');
 
         $root
-            ->isRequired()
             ->children()
                 ->arrayNode('clients')
                     ->isRequired()

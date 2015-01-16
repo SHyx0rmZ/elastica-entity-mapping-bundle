@@ -2,10 +2,9 @@
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
 
-use Elastica\Exception\ResponseException;
-use Elastica\Index;
-use Elastica\Type;
 use Psr\Log\LoggerInterface;
+use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\IndexWrapper;
+use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\TypeWrapper;
 
 /**
  * Class MappingUpdater
@@ -16,16 +15,16 @@ class MappingUpdater
 {
     /** @var LoggerInterface */
     private $logger;
-    /** @var Index */
+    /** @var IndexWrapper */
     private $index;
-    /** @var Type */
+    /** @var TypeWrapper */
     private $type;
 
     /**
      * @param LoggerInterface $logger
      * @param $type
      */
-    public function __construct(LoggerInterface $logger, Type $type)
+    public function __construct(LoggerInterface $logger, TypeWrapper $type)
     {
         $this->logger = $logger;
         $this->index = $type->getIndex();
@@ -49,7 +48,7 @@ class MappingUpdater
      */
     public function getIndexAddress()
     {
-        return AddressFormatter::getIndexAddress($this->index);
+        return $this->index->formatAddress();
     }
 
     /**
@@ -57,7 +56,7 @@ class MappingUpdater
      */
     public function getTypeAddress()
     {
-        return AddressFormatter::getTypeAddress($this->type);
+        return $this->type->formatAddress();
     }
 
     /**
@@ -66,16 +65,16 @@ class MappingUpdater
      */
     public function updateMapping(array $mapping, array $settings = array())
     {
-        try {
-            $this->updateType($mapping);
-        } catch (ResponseException $e) {
+        if ($this->updateType($mapping) !== true) {
             $this->logger->error('Error while updating elasticsearch mapping, trying to update settings');
 
             if ($settings != array()) {
                 $this->updateIndex($settings);
             }
 
-            $this->updateType($mapping);
+            if ($this->updateType($mapping) !== true) {
+                throw new \RuntimeException('Error while updating elasticsearch mapping: ' . $this->getIndexAddress());
+            }
         }
     }
 
@@ -96,6 +95,7 @@ class MappingUpdater
     private function updateType(array $mapping)
     {
         $this->logger->info('Updating elasticsearch mapping: ' . $this->getTypeAddress());
-        $this->type->setMapping($mapping);
+
+        return $this->type->setMapping($mapping);
     }
 }
