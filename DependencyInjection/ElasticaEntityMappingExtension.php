@@ -28,7 +28,7 @@ class ElasticaEntityMappingExtension extends ServicesLoaderExtension
             foreach ($clientConfig->getIndices() as $indexConfig) {
                 if ($indexConfig->hasAlias()) {
                     if (isset($aliases[$indexConfig->getAlias()])) {
-                        throw new \RuntimeException('Duplicate index alias encountered while building Elastica watchdogs: ' . $indexConfig['alias']);
+                        throw new \RuntimeException('Duplicate index alias encountered while building Elastica watchdogs: ' . $indexConfig->getAlias());
                     }
 
                     $aliases[$indexConfig->getAlias()] = true;
@@ -39,12 +39,12 @@ class ElasticaEntityMappingExtension extends ServicesLoaderExtension
         unset($aliases);
 
         foreach ($parser->getClients() as $index => $clientConfig) {
-            $factory = $container->register('shyxormz.elastica.mapping.factory.' . $index, Factory::class);
-            $factory->addArgument($config['clients'][$index]);
+            $factory = $container->register(ServiceNamingScheme::getFactoryName($index), Factory::class);
+            $factory->addArgument($clientConfig->getRawConfiguration());
             $factory->addArgument(new Reference('logger'));
 
-            $container->setAlias('shyxormz.elastica.mapping.factory.client.' . $index, $clientConfig->getServiceName());
-            $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client.' . $index);
+            $container->setAlias(ServiceNamingScheme::getClientAlias($index), $clientConfig->getServiceName());
+            $alias = $container->getAlias(ServiceNamingScheme::getClientAlias($index));
             $alias->setPublic(false);
         }
     }

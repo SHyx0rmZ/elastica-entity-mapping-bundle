@@ -2,6 +2,8 @@
 
 namespace SHyx0rmZ\ElasticaEntityMapping\DependencyInjection;
 
+use SHyx0rmZ\ProjectScanner\Util\Util;
+
 /**
  * Class IndexConfiguration
  * @package SHyx0rmZ\ElasticaEntityMapping\DependencyInjection
@@ -66,5 +68,25 @@ class IndexConfiguration
     public function hasPathToSettings()
     {
         return $this->getPathToSettings() != null;
+    }
+
+    /**
+     * @return array
+     */
+    public function getSettings()
+    {
+        $settings = $this->getPathToSettings();
+
+        if ($this->hasPathToSettings()) {
+            $file = Util::modifyPath(__DIR__, '../../../../' . $settings);
+
+            if (!is_file($file)) {
+                throw new \RuntimeException('ElasticsearchMapping file "' . $file . '" not found');
+            }
+
+            $settings = json_decode(file_get_contents($file), true);
+        }
+
+        return $settings ?: array();
     }
 }

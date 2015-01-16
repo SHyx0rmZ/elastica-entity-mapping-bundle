@@ -4,6 +4,7 @@ namespace SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\Compiler;
 
 use Doctrine\Common\Annotations\AnnotationReader;
 use SHyx0rmZ\ElasticaEntityMapping\Annotation\ElasticsearchMapping;
+use SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\ServiceNamingScheme;
 use SHyx0rmZ\ProjectScanner\ProjectScanner;
 use SHyx0rmZ\ProjectScanner\ScanResult\ScanResultInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -26,8 +27,8 @@ class ElasticsearchWatchdogPass implements CompilerPassInterface
         $scanner = new ProjectScanner();
         $reader = new AnnotationReader();
 
-        for ($index = 0; $container->hasDefinition('shyxormz.elastica.mapping.factory.' . $index); ++$index) {
-            $factory = $container->getDefinition('shyxormz.elastica.mapping.factory.' . $index);
+        for ($index = 0; $container->hasDefinition(ServiceNamingScheme::getFactoryName($index)); ++$index) {
+            $factory = $container->getDefinition(ServiceNamingScheme::getFactoryName($index));
 
             foreach ($scanner->findInDirectory('Entity') as $scanResult) {
                 $class = $this->getReflectionClass($scanResult->getReference());
@@ -41,9 +42,9 @@ class ElasticsearchWatchdogPass implements CompilerPassInterface
                 $this->processAnnotations($class, $annotations, $scanResult, $factory);
             }
 
-            $alias = $container->getAlias('shyxormz.elastica.mapping.factory.client.' . $index);
+            $alias = $container->getAlias(ServiceNamingScheme::getClientAlias($index));
             $client = $container->getDefinition($alias);
-            $client->setFactory(array(new Reference('shyxormz.elastica.mapping.factory.' . $index), 'createInstance'));
+            $client->setFactory(array(new Reference(ServiceNamingScheme::getFactoryName($index)), 'createInstance'));
 
             $factory->addArgument($client->getClass());
         }

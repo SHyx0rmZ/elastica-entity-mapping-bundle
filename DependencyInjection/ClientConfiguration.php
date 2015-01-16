@@ -33,6 +33,14 @@ class ClientConfiguration
     }
 
     /**
+     * @return array
+     */
+    public function getRawConfiguration()
+    {
+        return $this->configuration;
+    }
+
+    /**
      * @return string|null
      */
     public function getServiceName()

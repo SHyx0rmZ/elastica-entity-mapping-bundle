@@ -5,10 +5,11 @@ namespace SHyx0rmZ\ElasticaEntityMapping\Service;
 use Psr\Log\LoggerInterface;
 use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\ElasticsearchConnectorFactory;
 use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\ElasticsearchConnectorInterface;
-use SHyx0rmZ\ElasticaEntityMapping\Component\IndexSettingsContainer;
 use SHyx0rmZ\ElasticaEntityMapping\Component\MappingConflictDetector;
 use SHyx0rmZ\ElasticaEntityMapping\Component\MappingUpdater;
 use SHyx0rmZ\ElasticaEntityMapping\Component\Watchdog;
+use SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\ClientConfiguration;
+use SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\IndexConfiguration;
 
 /**
  * Class Factory
@@ -17,11 +18,8 @@ use SHyx0rmZ\ElasticaEntityMapping\Component\Watchdog;
  */
 class Factory
 {
-    /** @var array */
-    private $indices;
-
-    /** @var boolean */
-    private $shouldUpdate;
+    /** @var ClientConfiguration */
+    private $clientConfig;
 
     /** @var Watchdog[] */
     private $watchdogs = array();
@@ -39,8 +37,7 @@ class Factory
      */
     public function __construct(array $config, LoggerInterface $logger, $clientClass)
     {
-        $this->indices = $config['indices'];
-        $this->shouldUpdate = $config['update'];
+        $this->clientConfig = new ClientConfiguration($config);
         $this->logger = $logger;
         $this->clientClass = $clientClass;
     }
@@ -69,10 +66,8 @@ class Factory
 
         $this->detectConflicts($connector);
 
-        foreach ($this->indices as $indexConfig) {
-            $settingsContainer = new IndexSettingsContainer($indexConfig);
-
-            $this->applyWatchdogs($connector, $settingsContainer);
+        foreach ($this->clientConfig->getIndices() as $indexConfig) {
+            $this->applyWatchdogs($connector, $indexConfig);
         }
 
         return $client;
@@ -80,18 +75,18 @@ class Factory
 
     /**
      * @param ElasticsearchConnectorInterface $connector
-     * @param IndexSettingsContainer $settingsContainer
+     * @param IndexConfiguration $indexConfig
      */
-    private function applyWatchdogs(ElasticsearchConnectorInterface $connector, IndexSettingsContainer $settingsContainer)
+    private function applyWatchdogs(ElasticsearchConnectorInterface $connector, IndexConfiguration $indexConfig)
     {
         foreach ($this->watchdogs as $watchdog) {
-            if ($this->noIndexRestraint($watchdog) || $this->fulfillsIndexRestraint($watchdog, $settingsContainer)) {
-                $type = ElasticsearchConnectorFactory::createTypeWrapperFromConnector($connector, $settingsContainer->getName(), $watchdog->getTypeName());
+            if ($this->noIndexRestraint($watchdog) || $this->fulfillsIndexRestraint($watchdog, $indexConfig)) {
+                $type = ElasticsearchConnectorFactory::createTypeWrapperFromConnector($connector, $indexConfig->getName(), $watchdog->getTypeName());
                 $updater = new MappingUpdater($this->logger, $type);
 
                 if ($updater->needsUpdate($watchdog->getMapping())) {
-                    if ($this->shouldUpdate) {
-                        $updater->updateMapping($watchdog->getMapping(), $settingsContainer->getSettings());
+                    if ($this->clientConfig->shouldUpdate()) {
+                        $updater->updateMapping($watchdog->getMapping(), $indexConfig->getSettings());
                     } else {
                         throw new \RuntimeException('Elasticsearch mapping changed: ' . $updater->getTypeAddress());
                     }
@@ -107,14 +102,13 @@ class Factory
     {
         $differentTypesDetector = new MappingConflictDetector();
 
-        foreach ($this->indices as $indexConfig) {
-            $settingsContainer = new IndexSettingsContainer($indexConfig);
+        foreach ($this->clientConfig->getIndices() as $indexConfig) {
             $sameTypeDetector = new MappingConflictDetector();
 
             foreach ($this->watchdogs as $watchdog) {
-                $type = ElasticsearchConnectorFactory::createTypeWrapperFromConnector($connector, $settingsContainer->getName(), $watchdog->getTypeName());
+                $type = ElasticsearchConnectorFactory::createTypeWrapperFromConnector($connector, $indexConfig->getName(), $watchdog->getTypeName());
 
-                if ($this->noIndexRestraint($watchdog) || $this->fulfillsIndexRestraint($watchdog, $settingsContainer)) {
+                if ($this->noIndexRestraint($watchdog) || $this->fulfillsIndexRestraint($watchdog, $indexConfig)) {
                     $differentTypesDetector->remember($watchdog, $type);
                     $sameTypeDetector->remember($watchdog, $type);
                 }
@@ -141,11 +135,11 @@ class Factory
 
     /**
      * @param Watchdog $watchdog
-     * @param IndexSettingsContainer $settings
+     * @param IndexConfiguration $indexConfig
      * @return bool
      */
-    private function fulfillsIndexRestraint(Watchdog $watchdog, IndexSettingsContainer $settings)
+    private function fulfillsIndexRestraint(Watchdog $watchdog, IndexConfiguration $indexConfig)
     {
-        return ($settings->getAlias() !== null && in_array($settings->getAlias(), $watchdog->getIndices()));
+        return ($indexConfig->hasAlias() && in_array($indexConfig->getAlias(), $watchdog->getIndices()));
     }
 }
