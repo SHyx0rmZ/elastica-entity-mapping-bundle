@@ -15,6 +15,7 @@
         "php": ">=5.5.0",
         "doctrine/annotations": "1.*",
         "ppokatilo/project-scanner": "~1.0",
+        "ppokatilo/services-loader": "~1.1",
         "psr/log": "~1.0",
         "ruflin/elastica": "*",
         "symfony/config": "~2.0",
