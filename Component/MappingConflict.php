@@ -2,6 +2,11 @@
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component;
 
+/**
+ * Class MappingConflict
+ * @package SHyx0rmZ\ElasticaEntityMapping\Component
+ * @author Patrick Pokatilo <mail@shyxormz.net>
+ */
 class MappingConflict
 {
     /** @var string */

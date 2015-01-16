@@ -6,6 +6,11 @@ use SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\Compiler\ElasticsearchWat
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
+/**
+ * Class ElasticaEntityMappingBundle
+ * @package SHyx0rmZ\ElasticaEntityMapping
+ * @author Patrick Pokatilo <mail@shyxormz.net>
+ */
 class ElasticaEntityMappingBundle extends Bundle
 {
     public function build(ContainerBuilder $container)

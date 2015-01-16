@@ -2,6 +2,11 @@
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch;
 
+/**
+ * Class TypeWrapper
+ * @package SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch
+ * @author Patrick Pokatilo <mail@shyxormz.net>
+ */
 class TypeWrapper
 {
     private $index;

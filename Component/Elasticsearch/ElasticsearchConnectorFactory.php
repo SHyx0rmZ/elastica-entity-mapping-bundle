@@ -2,6 +2,11 @@
 
 namespace SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch;
 
+/**
+ * Class ElasticsearchConnectorFactory
+ * @package SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch
+ * @author Patrick Pokatilo <mail@shyxormz.net>
+ */
 class ElasticsearchConnectorFactory
 {
     /**
@@ -15,13 +20,11 @@ class ElasticsearchConnectorFactory
         switch ($clientClass) {
             case ElasticaAdapter::CLIENT_CLASS:
                 return new ElasticaAdapter($client);
-                break;
             case ElastificationAdapter::CLIENT_CLASS:
                 return new ElastificationAdapter($client);
-                break;
-            default:
-                throw new \UnexpectedValueException('Unknown Elasticsearch provider');
         }
+
+        throw new \UnexpectedValueException('Unknown Elasticsearch provider');
     }
 
     public static function createIndexWrapper($clientClass, $client, $indexName)

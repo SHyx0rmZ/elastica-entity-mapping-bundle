@@ -29,11 +29,13 @@ class Factory
     /** @var LoggerInterface */
     private $logger;
 
+    /** @var string */
     private $clientClass;
 
     /**
      * @param array $config
      * @param LoggerInterface $logger
+     * @param string $clientClass
      */
     public function __construct(array $config, LoggerInterface $logger, $clientClass)
     {
@@ -44,15 +46,16 @@ class Factory
     }
 
     /**
-     * @param string $type
-     * @param string $file
+     * @param string $fileName
      * @param array $indices
+     * @param string $typeName
      */
-    public function addWatchdog($type, $file, array $indices)
+    public function addWatchdog($fileName, array $indices, $typeName)
     {
-        $mapping = json_decode(file_get_contents($file), true);
-        $mapping = $mapping[$type]['properties'];
-        $this->watchdogs[] = new Watchdog($type, $mapping, $indices, $file);
+        $mapping = json_decode(file_get_contents($fileName), true);
+        $mapping = $mapping[$typeName]['properties'];
+
+        $this->watchdogs[] = new Watchdog($typeName, $mapping, $indices, $fileName);
     }
 
     /**

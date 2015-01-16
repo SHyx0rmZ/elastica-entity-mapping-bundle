@@ -4,6 +4,11 @@ namespace SHyx0rmZ\ElasticaEntityMapping\Component;
 
 use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\TypeWrapper;
 
+/**
+ * Class Mapping
+ * @package SHyx0rmZ\ElasticaEntityMapping\Component
+ * @author Patrick Pokatilo <mail@shyxormz.net>
+ */
 class Mapping
 {
     /** @var array */

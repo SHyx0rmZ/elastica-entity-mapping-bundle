@@ -7,19 +7,28 @@ use Elastica\Exception\ResponseException;
 use Elastica\Index;
 use Elastica\Type;
 
+/**
+ * Class ElasticaAdapter
+ * @package SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch
+ * @author Patrick Pokatilo <mail@shyxormz.net>
+ */
 class ElasticaAdapter implements ElasticsearchConnectorInterface
 {
     const CLIENT_CLASS = Client::class;
 
+    /** @var Client */
     private $client;
 
+    /**
+     * @param Client $client
+     */
     public function __construct(Client $client)
     {
         $this->client = $client;
     }
 
     /**
-     * @return string
+     * @inheritdoc
      */
     public function formatIndexAddress($indexName)
     {
@@ -29,13 +38,16 @@ class ElasticaAdapter implements ElasticsearchConnectorInterface
     }
 
     /**
-     * @return string
+     * @inheritdoc
      */
     public function formatTypeAddress($indexName, $typeName)
     {
         return $this->formatIndexAddress($indexName) . '/' . $typeName;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function closeIndex($indexName)
     {
         $index = new Index($this->client, $indexName);
@@ -43,6 +55,9 @@ class ElasticaAdapter implements ElasticsearchConnectorInterface
         $index->close();
     }
 
+    /**
+     * @inheritdoc
+     */
     public function openIndex($indexName)
     {
         $index = new Index($this->client, $indexName);
@@ -50,6 +65,9 @@ class ElasticaAdapter implements ElasticsearchConnectorInterface
         $index->open();
     }
 
+    /**
+     * @inheritdoc
+     */
     public function getMapping($indexName, $typeName)
     {
         $type = new Type(new Index($this->client, $indexName), $typeName);
@@ -57,6 +75,9 @@ class ElasticaAdapter implements ElasticsearchConnectorInterface
         return $type->getMapping();
     }
 
+    /**
+     * @inheritdoc
+     */
     public function setMapping($indexName, $typeName, array $mapping)
     {
         $type = new Type(new Index($this->client, $indexName), $typeName);
@@ -64,13 +85,15 @@ class ElasticaAdapter implements ElasticsearchConnectorInterface
         try {
             $type->setMapping($mapping);
         } catch (ResponseException $e) {
-            var_dump($e);
             return false;
         }
 
         return true;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function setSettings($indexName, array $settings)
     {
         $index = new Index($this->client, $indexName);

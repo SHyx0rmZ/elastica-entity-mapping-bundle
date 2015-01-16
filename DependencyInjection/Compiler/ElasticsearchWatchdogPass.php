@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
 
 /**
- * Class ElasticaEntityMappingPass
+ * Class ElasticsearchWatchdogPass
  * @package SHyx0rmZ\ElasticaEntityMapping\DependencyInjection\Compiler
  * @author Patrick Pokatilo <mail@shyxormz.net>
  */
@@ -75,7 +75,7 @@ class ElasticsearchWatchdogPass implements CompilerPassInterface
 
                 $this->ensureTypeValid($type, $file);
 
-                $factory->addMethodCall('addWatchdog', array($type, $file, $indices));
+                $factory->addMethodCall('addWatchdog', array($file, $indices, $type));
             }
         }
     }

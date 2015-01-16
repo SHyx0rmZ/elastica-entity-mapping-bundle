@@ -9,7 +9,7 @@ use SHyx0rmZ\ElasticaEntityMapping\Component\Elasticsearch\TypeWrapper;
 /**
  * Class MappingUpdater
  * @package SHyx0rmZ\ElasticaEntityMapping\Component
- * @author Patrick Pokatilo
+ * @author Patrick Pokatilo <mail@shyxormz.net>
  */
 class MappingUpdater
 {
