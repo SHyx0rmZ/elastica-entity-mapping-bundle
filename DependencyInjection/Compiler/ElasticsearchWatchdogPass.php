@@ -27,20 +27,24 @@ class ElasticsearchWatchdogPass implements CompilerPassInterface
         $scanner = new ProjectScanner();
         $reader = new AnnotationReader();
 
-        for ($index = 0; $container->hasDefinition(ServiceNamingScheme::getFactoryName($index)); ++$index) {
-            $factory = $container->getDefinition(ServiceNamingScheme::getFactoryName($index));
+        foreach ($scanner->findInDirectory('Entity') as $scanResult) {
+            $class = $this->getReflectionClass($scanResult->getReference());
 
-            foreach ($scanner->findInDirectory('Entity') as $scanResult) {
-                $class = $this->getReflectionClass($scanResult->getReference());
+            if ($class === null) {
+                continue;
+            }
 
-                if ($class === null) {
-                    continue;
-                }
+            $annotations = $reader->getClassAnnotations($class);
 
-                $annotations = $reader->getClassAnnotations($class);
+            for ($index = 0; $container->hasDefinition(ServiceNamingScheme::getFactoryName($index)); ++$index) {
+                $factory = $container->getDefinition(ServiceNamingScheme::getFactoryName($index));
 
                 $this->processAnnotations($class, $annotations, $scanResult, $factory);
             }
+        }
+
+        for ($index = 0; $container->hasDefinition(ServiceNamingScheme::getFactoryName($index)); ++$index) {
+            $factory = $container->getDefinition(ServiceNamingScheme::getFactoryName($index));
 
             $alias = $container->getAlias(ServiceNamingScheme::getClientAlias($index));
             $client = $container->getDefinition($alias);
